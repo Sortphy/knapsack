@@ -349,6 +349,71 @@
       background-color: rgba(243, 156, 18, 0.1);
       border-radius: 4px;
     }
+
+    .algorithm-explanation {
+      padding: 1rem;
+      line-height: 1.6;
+    }
+
+    .explanation-step {
+      margin-bottom: 1.5rem;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid var(--primary);
+    }
+
+    .explanation-step h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+
+    .visual-example {
+      margin: 1rem 0;
+      padding: 1rem;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .complexity-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      background-color: var(--warning);
+      color: white;
+      border-radius: 4px;
+      font-size: 0.9rem;
+      margin: 0.5rem 0;
+    }
+
+    .algorithm-comparison {
+      margin: 1rem 0;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+    }
+
+    .algorithm-comparison table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+
+    .algorithm-comparison th,
+    .algorithm-comparison td {
+      padding: 0.5rem;
+      border: 1px solid #ddd;
+      text-align: left;
+    }
+
+    .algorithm-comparison th {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .algorithm-comparison tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
   </style>
 </head>
 <body>
@@ -452,6 +517,7 @@
         <button class="solve" id="solve-btn">Encontrar Melhor Solução</button>
         <button id="reset-btn">Redefinir Seleção</button>
         <button id="show-steps-btn">Mostrar Etapas do Algoritmo</button>
+        <button id="explain-algorithm-btn">Explicação do Algoritmo</button>
         
         <div class="capacity-status">
           <p>Peso Atual: <span id="current-weight">0</span>/<span id="max-capacity">10</span></p>
@@ -542,6 +608,16 @@
     </div>
   </div>
   
+  <div class="modal" id="explanation-modal">
+    <div class="modal-content">
+      <span class="close-modal" id="close-explanation-modal">&times;</span>
+      <h2 id="explanation-title">Explicação do Algoritmo</h2>
+      <div id="algorithm-explanation" class="algorithm-explanation">
+        <!-- O conteúdo será preenchido dinamicamente -->
+      </div>
+    </div>
+  </div>
+  
   <script>
     class Item {
       constructor(value, weight, id) {
@@ -576,6 +652,7 @@
     
     const resetBtn = document.getElementById('reset-btn');
     const showStepsBtn = document.getElementById('show-steps-btn');
+    const explainAlgorithmBtn = document.getElementById('explain-algorithm-btn');
     
     const currentWeightSpan = document.getElementById('current-weight');
     const maxCapacitySpan = document.getElementById('max-capacity');
@@ -592,6 +669,10 @@
     const closeModal = document.getElementById('close-modal');
     const visualStepsDiv = document.getElementById('visual-steps');
     const combinationsDisplayDiv = document.getElementById('combinations-display');
+    const explanationModal = document.getElementById('explanation-modal');
+    const closeExplanationModal = document.getElementById('close-explanation-modal');
+    const explanationTitle = document.getElementById('explanation-title');
+    const algorithmExplanation = document.getElementById('algorithm-explanation');
   
     // Initialization
     initialize();
@@ -614,6 +695,8 @@
       resetBtn.addEventListener('click', resetSelection);
       showStepsBtn.addEventListener('click', showAlgorithmSteps);
       closeModal.addEventListener('click', () => stepsModal.style.display = 'none');
+      explainAlgorithmBtn.addEventListener('click', showAlgorithmExplanation);
+      closeExplanationModal.addEventListener('click', () => explanationModal.style.display = 'none');
   
       capacityInput.addEventListener('change', () => {
         capacity = parseInt(capacityInput.value);
@@ -1545,6 +1628,337 @@
     window.addEventListener('click', (event) => {
       if (event.target === stepsModal) {
         stepsModal.style.display = 'none';
+      }
+    });
+
+    function showAlgorithmExplanation() {
+      const algorithm = document.getElementById('algorithm-select').value;
+      explanationModal.style.display = 'flex';
+      
+      let title = '';
+      let explanation = '';
+      
+      switch(algorithm) {
+        case 'bruteforce':
+          title = 'Força Bruta';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O algoritmo de Força Bruta é como tentar todas as combinações possíveis de itens na mochila, uma por uma. Imagine que você tem uma mochila e vários itens. Você tenta todas as maneiras possíveis de colocar os itens na mochila e escolhe a combinação que dá o maior valor sem exceder o peso máximo.</p>
+              <div class="visual-example">
+                <p>Por exemplo, com 3 itens (A, B, C), você testa:</p>
+                <ul>
+                  <li>Nenhum item</li>
+                  <li>Apenas A</li>
+                  <li>Apenas B</li>
+                  <li>Apenas C</li>
+                  <li>A e B</li>
+                  <li>A e C</li>
+                  <li>B e C</li>
+                  <li>A, B e C</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Garante encontrar a solução ótima</li>
+                <li>Fácil de entender e implementar</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Muito lento para muitos itens</li>
+                <li>Número de combinações cresce exponencialmente (2^n)</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(2^n)</div>
+          `;
+          break;
+          
+        case 'dp':
+          title = 'Programação Dinâmica';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>Imagine uma tabela onde cada célula representa o valor máximo que podemos obter com um certo peso. O algoritmo preenche esta tabela passo a passo, usando os resultados anteriores para calcular os novos.</p>
+              <div class="visual-example">
+                <p>Exemplo de tabela DP:</p>
+                <table class="algorithm-comparison">
+                  <tr>
+                    <th>Peso</th>
+                    <th>0</th>
+                    <th>1</th>
+                    <th>2</th>
+                    <th>3</th>
+                  </tr>
+                  <tr>
+                    <td>Item 1</td>
+                    <td>0</td>
+                    <td>5</td>
+                    <td>5</td>
+                    <td>5</td>
+                  </tr>
+                  <tr>
+                    <td>Item 2</td>
+                    <td>0</td>
+                    <td>5</td>
+                    <td>7</td>
+                    <td>12</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Garante solução ótima</li>
+                <li>Mais eficiente que força bruta</li>
+                <li>Bom para problemas com capacidade moderada</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Pode ser lento para capacidades muito grandes</li>
+                <li>Usa mais memória que outros algoritmos</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(n*W)</div>
+          `;
+          break;
+          
+        case 'greedy':
+          title = 'Algoritmo Guloso';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O algoritmo guloso é como um colecionador que sempre escolhe o item que parece mais valioso naquele momento. Ele calcula a razão valor/peso para cada item e escolhe primeiro os itens com a melhor razão.</p>
+              <div class="visual-example">
+                <p>Exemplo de ordenação por razão valor/peso:</p>
+                <ul>
+                  <li>Item A: Valor $10, Peso 2kg → Razão: 5</li>
+                  <li>Item B: Valor $15, Peso 3kg → Razão: 5</li>
+                  <li>Item C: Valor $20, Peso 5kg → Razão: 4</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Muito rápido</li>
+                <li>Fácil de implementar</li>
+                <li>Bom para problemas grandes</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Não garante solução ótima</li>
+                <li>Pode escolher itens sub-ótimos</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(n log n)</div>
+          `;
+          break;
+          
+        case 'bnb':
+          title = 'Branch and Bound';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O Branch and Bound é como um explorador inteligente que procura a melhor solução em uma árvore de possibilidades. Ele usa "poda" para eliminar ramos que não podem levar a uma solução melhor que a já encontrada.</p>
+              <div class="visual-example">
+                <p>Exemplo de árvore de decisão com poda:</p>
+                <ul>
+                  <li>Começa com um item (A)</li>
+                  <li>Ramifica em incluir ou não incluir A</li>
+                  <li>Calcula limites superiores para cada ramo</li>
+                  <li>Poda ramos que não podem melhorar a solução atual</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Garante solução ótima</li>
+                <li>Mais eficiente que força bruta</li>
+                <li>Poda ramos inúteis da árvore de busca</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Pode ser lento para problemas muito grandes</li>
+                <li>Complexidade ainda exponencial no pior caso</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(2^n) no pior caso, mas geralmente melhor</div>
+          `;
+          break;
+          
+        case 'ga':
+          title = 'Algoritmo Genético';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O Algoritmo Genético imita a evolução natural. Ele começa com uma população de soluções possíveis e as melhora através de seleção, crossover e mutação ao longo de várias gerações.</p>
+              <div class="visual-example">
+                <p>Exemplo de evolução:</p>
+                <ul>
+                  <li>Geração 1: População inicial aleatória</li>
+                  <li>Seleção: Escolhe as melhores soluções</li>
+                  <li>Crossover: Combina soluções boas</li>
+                  <li>Mutação: Pequenas alterações aleatórias</li>
+                  <li>Repete por várias gerações</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Bom para problemas grandes</li>
+                <li>Pode escapar de mínimos locais</li>
+                <li>Paralelizável</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Não garante solução ótima</li>
+                <li>Precisa ajustar parâmetros</li>
+                <li>Pode ser lento para convergir</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(populationSize * generations * n)</div>
+          `;
+          break;
+          
+        case 'sa':
+          title = 'Simulated Annealing';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O Simulated Annealing imita o processo de resfriamento de metais. Começa "quente" (aceitando soluções piores) e gradualmente "esfria" (tornando-se mais seletivo), permitindo escapar de mínimos locais.</p>
+              <div class="visual-example">
+                <p>Exemplo de processo:</p>
+                <ul>
+                  <li>Temperatura inicial alta (100)</li>
+                  <li>Gera soluções vizinhas</li>
+                  <li>Aceita soluções piores com probabilidade decrescente</li>
+                  <li>Resfria gradualmente (taxa 0.95)</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Pode escapar de mínimos locais</li>
+                <li>Bom para problemas grandes</li>
+                <li>Fácil de implementar</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Não garante solução ótima</li>
+                <li>Precisa ajustar parâmetros</li>
+                <li>Pode ser lento para convergir</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(iterationsPerTemp * log(temperature))</div>
+          `;
+          break;
+          
+        case 'approx':
+          title = 'Algoritmo de Aproximação';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O algoritmo de aproximação é uma abordagem simples e rápida que ordena os itens por valor e seleciona os mais valiosos que cabem na mochila. Embora não garanta a solução ótima, oferece uma garantia de qualidade.</p>
+              <div class="visual-example">
+                <p>Exemplo de seleção:</p>
+                <ul>
+                  <li>Item A: Valor $20, Peso 5kg</li>
+                  <li>Item B: Valor $15, Peso 3kg</li>
+                  <li>Item C: Valor $10, Peso 2kg</li>
+                  <li>Seleciona por valor decrescente</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Muito rápido</li>
+                <li>Garante pelo menos 50% do valor ótimo</li>
+                <li>Fácil de implementar</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Não garante solução ótima</li>
+                <li>Pode ser muito sub-ótimo em alguns casos</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(n log n)</div>
+          `;
+          break;
+          
+        case 'fptas':
+          title = 'FPTAS (Fully Polynomial Time Approximation Scheme)';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>O FPTAS é um esquema de aproximação que pode chegar arbitrariamente perto da solução ótima. Ele escala os valores dos itens e usa programação dinâmica para encontrar uma solução aproximada.</p>
+              <div class="visual-example">
+                <p>Exemplo de processo:</p>
+                <ul>
+                  <li>Escala valores (ε = 0.2)</li>
+                  <li>Aplica DP nos valores escalados</li>
+                  <li>Reconstrói solução</li>
+                  <li>Garante (1-ε) do valor ótimo</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Pode chegar arbitrariamente perto da solução ótima</li>
+                <li>Complexidade polinomial</li>
+                <li>Bom para problemas grandes</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Mais complexo que outros algoritmos</li>
+                <li>Precisa escolher ε cuidadosamente</li>
+                <li>Pode ser lento para ε muito pequeno</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(n²/ε)</div>
+          `;
+          break;
+      }
+      
+      explanationTitle.textContent = `Explicação: ${title}`;
+      algorithmExplanation.innerHTML = explanation;
+    }
+
+    // Adicione o evento de clique fora do modal para fechar
+    window.addEventListener('click', (event) => {
+      if (event.target === explanationModal) {
+        explanationModal.style.display = 'none';
       }
     });
   </script>
