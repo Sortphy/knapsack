@@ -464,22 +464,32 @@
         this.id = id;
       }
     }
-    
-    // Variáveis globais
+  
+    // Global variables
     let items = [];
     let selectedItems = [];
     let capacity = 10;
     let optimalSolution = null;
     
-    // Elementos DOM
+    // DOM elements
     const itemsContainer = document.getElementById('items-container');
     const selectedItemsContainer = document.getElementById('selected-items');
     const capacityInput = document.getElementById('capacity-input');
     const itemCountInput = document.getElementById('item-count');
     const generateBtn = document.getElementById('generate-btn');
     const solveBtn = document.getElementById('solve-btn');
+    // New algorithm buttons (make sure these exist in your HTML)
+    const dpBtn = document.getElementById('dp-btn');
+    const greedyBtn = document.getElementById('greedy-btn');
+    const bnbBtn = document.getElementById('bnb-btn');
+    const gaBtn = document.getElementById('ga-btn');
+    const saBtn = document.getElementById('sa-btn');
+    const approxBtn = document.getElementById('approx-btn');
+    const fptasBtn = document.getElementById('fptas-btn');
+    
     const resetBtn = document.getElementById('reset-btn');
     const showStepsBtn = document.getElementById('show-steps-btn');
+    
     const currentWeightSpan = document.getElementById('current-weight');
     const maxCapacitySpan = document.getElementById('max-capacity');
     const capacityFill = document.getElementById('capacity-fill');
@@ -495,296 +505,646 @@
     const closeModal = document.getElementById('close-modal');
     const visualStepsDiv = document.getElementById('visual-steps');
     const combinationsDisplayDiv = document.getElementById('combinations-display');
-    
-    // Inicialização
+  
+    // Initialization
     initialize();
-    
+  
     function initialize() {
       capacity = parseInt(capacityInput.value);
       maxCapacitySpan.textContent = capacity;
       backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
-      
-      // Adiciona os eventos
+  
+      // Add event listeners
       generateBtn.addEventListener('click', generateItems);
-      solveBtn.addEventListener('click', solveKnapsack);
+      solveBtn.addEventListener('click', solveKnapsack); // Brute force already provided
+      dpBtn && dpBtn.addEventListener('click', solveKnapsackDP);
+      greedyBtn && greedyBtn.addEventListener('click', solveKnapsackGreedy);
+      bnbBtn && bnbBtn.addEventListener('click', solveKnapsackBnB);
+      gaBtn && gaBtn.addEventListener('click', solveKnapsackGA);
+      saBtn && saBtn.addEventListener('click', solveKnapsackSA);
+      approxBtn && approxBtn.addEventListener('click', solveKnapsackApprox);
+      fptasBtn && fptasBtn.addEventListener('click', solveKnapsackFPTAS);
       resetBtn.addEventListener('click', resetSelection);
       showStepsBtn.addEventListener('click', showAlgorithmSteps);
       closeModal.addEventListener('click', () => stepsModal.style.display = 'none');
-      
+  
       capacityInput.addEventListener('change', () => {
         capacity = parseInt(capacityInput.value);
         maxCapacitySpan.textContent = capacity;
         backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
         updateCapacityBar();
       });
-      
-      // Geração inicial
+  
+      // Initial generation
       generateItems();
     }
-    
+  
     function generateRandomItems(count) {
       const newItems = [];
       for (let i = 0; i < count; i++) {
-        const value = Math.floor(Math.random() * 10) + 1;  // 1 a 10
-        const weight = Math.floor(Math.random() * 7) + 1;  // 1 a 7
+        const value = Math.floor(Math.random() * 10) + 1;  // Values 1 to 10
+        const weight = Math.floor(Math.random() * 7) + 1;   // Weights 1 to 7
         newItems.push(new Item(value, weight, i + 1));
       }
       return newItems;
     }
-    
+  
     function generateItems() {
       const count = parseInt(itemCountInput.value);
       items = generateRandomItems(count);
       selectedItems = [];
       optimalSolution = null;
-      
+  
       renderItems();
       updateSelection();
       resultPanel.style.display = 'none';
     }
-    
+  
     function renderItems() {
       itemsContainer.innerHTML = '';
-      
       items.forEach(item => {
         const itemElement = document.createElement('div');
         itemElement.classList.add('item');
         itemElement.dataset.id = item.id;
-        
         itemElement.innerHTML = `
           <div class="item-value">$${item.value}</div>
           <div class="item-weight">${item.weight} kg</div>
         `;
-        
         itemElement.addEventListener('click', () => toggleItemSelection(item));
-        
         itemsContainer.appendChild(itemElement);
       });
     }
-    
+  
     function toggleItemSelection(item) {
       const index = selectedItems.findIndex(i => i.id === item.id);
-      
       if (index === -1) {
         selectedItems.push(item);
       } else {
         selectedItems.splice(index, 1);
       }
-      
       updateSelection();
       highlightSelectedItems();
     }
-    
+  
     function highlightSelectedItems() {
-      // Reinicia a seleção de todos os itens
-      document.querySelectorAll('.item').forEach(el => {
-        el.classList.remove('selected');
-      });
-      
-      // Destaca os itens selecionados
+      // Clear previous selections
+      document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
       selectedItems.forEach(item => {
         const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
-        if (itemElement) {
-          itemElement.classList.add('selected');
-        }
+        if (itemElement) itemElement.classList.add('selected');
       });
-      
-      // Destaca os itens da solução ótima, se existir
-      if (optimalSolution) {
-        document.querySelectorAll('.item').forEach(el => {
-          el.classList.remove('in-optimal');
-        });
-        
+  
+      // Highlight items that belong to the optimal solution (if available)
+      if (optimalSolution && optimalSolution.bestCombination) {
+        document.querySelectorAll('.item').forEach(el => el.classList.remove('in-optimal'));
         optimalSolution.bestCombination.forEach(item => {
           const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
-          if (itemElement) {
-            itemElement.classList.add('in-optimal');
-          }
+          if (itemElement) itemElement.classList.add('in-optimal');
         });
       }
     }
-    
+  
     function updateSelection() {
       const currentWeight = calculateTotalWeight(selectedItems);
       const currentValue = calculateTotalValue(selectedItems);
-      
       currentWeightSpan.textContent = currentWeight;
       selectionValueSpan.textContent = currentValue;
       selectionWeightSpan.textContent = currentWeight;
-      
       updateCapacityBar();
       renderSelectedItems();
     }
-    
+  
     function updateCapacityBar() {
       const currentWeight = calculateTotalWeight(selectedItems);
       const percentage = Math.min((currentWeight / capacity) * 100, 100);
       capacityFill.style.width = `${percentage}%`;
-      
-      if (currentWeight > capacity) {
-        capacityFill.style.backgroundColor = 'var(--danger)';
-      } else {
-        capacityFill.style.backgroundColor = 'var(--primary)';
-      }
+      capacityFill.style.backgroundColor = (currentWeight > capacity) ? 'var(--danger)' : 'var(--primary)';
     }
-    
+  
     function renderSelectedItems() {
       selectedItemsContainer.innerHTML = '';
-      
       if (selectedItems.length === 0) {
         const emptyMessage = document.createElement('p');
         emptyMessage.textContent = 'Nenhum item selecionado ainda. Clique nos itens para adicioná-los à sua mochila.';
         selectedItemsContainer.appendChild(emptyMessage);
         return;
       }
-      
       selectedItems.forEach(item => {
         const itemElement = document.createElement('div');
-        itemElement.classList.add('item');
-        itemElement.classList.add('selected');
-        
+        itemElement.classList.add('item', 'selected');
         itemElement.innerHTML = `
           <div class="item-value">$${item.value}</div>
           <div class="item-weight">${item.weight} kg</div>
         `;
-        
         selectedItemsContainer.appendChild(itemElement);
       });
     }
-    
+  
     function calculateTotalWeight(itemsList) {
       return itemsList.reduce((sum, item) => sum + item.weight, 0);
     }
-    
+  
     function calculateTotalValue(itemsList) {
       return itemsList.reduce((sum, item) => sum + item.value, 0);
     }
-    
+  
     function resetSelection() {
       selectedItems = [];
       updateSelection();
       highlightSelectedItems();
     }
-    
+  
+    // ----- Provided Brute Force Method -----
     function bruteForceKnapsack(items, capacity) {
       let bestValue = 0;
       let bestCombination = [];
       const n = items.length;
-      const totalCombinations = 1 << n; // equivalente a 2^n
+      const totalCombinations = 1 << n; // 2^n combinations
       let tries = 0;
       const allCombinations = [];
-      
-      // Percorre todas as combinações possíveis
       for (let i = 0; i < totalCombinations; i++) {
         tries++;
         let currentValue = 0;
         let currentWeight = 0;
         let combination = [];
-        
-        // Verifica cada posição de bit
         for (let j = 0; j < n; j++) {
-          // Se o j-ésimo bit em i estiver ativo, inclui items[j]
           if (i & (1 << j)) {
             currentValue += items[j].value;
             currentWeight += items[j].weight;
             combination.push(items[j]);
           }
         }
-        
         allCombinations.push({
           combination,
           value: currentValue,
           weight: currentWeight,
           valid: currentWeight <= capacity
         });
-        
-        // Se a combinação for válida e tiver um valor superior ao melhor até então, atualiza a melhor
         if (currentWeight <= capacity && currentValue > bestValue) {
           bestValue = currentValue;
           bestCombination = combination;
         }
       }
-      
       return { bestValue, bestCombination, tries, allCombinations };
     }
-    
+  
     function solveKnapsack() {
       optimalSolution = bruteForceKnapsack(items, capacity);
-      
       bestValueSpan.textContent = optimalSolution.bestValue;
       totalWeightSpan.textContent = calculateTotalWeight(optimalSolution.bestCombination);
       combinationsCheckedSpan.textContent = optimalSolution.tries;
-      
-      // Exibe a solução ótima
       resultPanel.style.display = 'block';
-      optimalSolutionDiv.innerHTML = '';
-      
       if (optimalSolution.bestCombination.length === 0) {
         optimalSolutionDiv.innerHTML = '<p>Nenhuma combinação válida encontrada.</p>';
       } else {
-        const optimalHtml = `
+        optimalSolutionDiv.innerHTML = `
           <p>A solução ótima inclui os seguintes itens:</p>
           <ul>
-            ${optimalSolution.bestCombination.map(item => 
-              `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`
-            ).join('')}
+            ${optimalSolution.bestCombination.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
           </ul>
           <p>Valor Total: $${optimalSolution.bestValue}</p>
           <p>Peso Total: ${calculateTotalWeight(optimalSolution.bestCombination)} kg</p>
         `;
-        
-        optimalSolutionDiv.innerHTML = optimalHtml;
       }
-      
       highlightSelectedItems();
     }
-    
+  
+    // ----- 1. Dynamic Programming -----
+    function solveKnapsackDP() {
+      const n = items.length;
+      // Create dp table: rows for items and columns for weight capacities
+      const dp = Array(n + 1).fill(0).map(() => Array(capacity + 1).fill(0));
+      // Table for item inclusion reconstruction
+      for (let i = 1; i <= n; i++) {
+        const item = items[i - 1];
+        for (let w = 0; w <= capacity; w++) {
+          if (item.weight > w) {
+            dp[i][w] = dp[i - 1][w];
+          } else {
+            dp[i][w] = Math.max(
+              dp[i - 1][w],
+              dp[i - 1][w - item.weight] + item.value
+            );
+          }
+        }
+      }
+      // Reconstruction to get selected items
+      let res = dp[n][capacity];
+      let w = capacity;
+      const selected = [];
+      for (let i = n; i > 0 && res > 0; i--) {
+        if (res !== dp[i - 1][w]) {
+          const item = items[i - 1];
+          selected.push(item);
+          res -= item.value;
+          w -= item.weight;
+        }
+      }
+      optimalSolution = { bestValue: dp[n][capacity], bestCombination: selected };
+      bestValueSpan.textContent = optimalSolution.bestValue;
+      totalWeightSpan.textContent = calculateTotalWeight(selected);
+      combinationsCheckedSpan.textContent = '-'; // Not applicable
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução DP inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${optimalSolution.bestValue}</p>
+        <p>Peso Total: ${calculateTotalWeight(selected)} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 2. Greedy Approach (by value/weight ratio) -----
+    function solveKnapsackGreedy() {
+      // Sort items by descending value/weight ratio
+      const sortedItems = [...items].sort((a, b) => (b.value / b.weight) - (a.value / a.weight));
+      let currentWeight = 0;
+      const selected = [];
+      for (const item of sortedItems) {
+        if (currentWeight + item.weight <= capacity) {
+          selected.push(item);
+          currentWeight += item.weight;
+        }
+      }
+      const totalValue = calculateTotalValue(selected);
+      optimalSolution = { bestValue: totalValue, bestCombination: selected };
+      bestValueSpan.textContent = optimalSolution.bestValue;
+      totalWeightSpan.textContent = currentWeight;
+      combinationsCheckedSpan.textContent = '-'; // Not applicable
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução Greedy inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${totalValue}</p>
+        <p>Peso Total: ${currentWeight} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 3. Branch and Bound -----
+    function solveKnapsackBnB() {
+      // Sort items by descending ratio (helps bounding)
+      const sortedItems = [...items].sort((a, b) => (b.value / b.weight) - (a.value / a.weight));
+      let bestValue = 0;
+      let bestCombination = [];
+      
+      function bound(level, currentValue, currentWeight) {
+        // Upper bound using fractional knapsack
+        let boundVal = currentValue;
+        let totalWeight = currentWeight;
+        for (let i = level; i < sortedItems.length; i++) {
+          if (totalWeight + sortedItems[i].weight <= capacity) {
+            totalWeight += sortedItems[i].weight;
+            boundVal += sortedItems[i].value;
+          } else {
+            const remain = capacity - totalWeight;
+            boundVal += sortedItems[i].value * (remain / sortedItems[i].weight);
+            break;
+          }
+        }
+        return boundVal;
+      }
+      
+      function branch(level, currentValue, currentWeight, combination) {
+        if (currentWeight > capacity) return;
+        if (level === sortedItems.length) {
+          if (currentValue > bestValue) {
+            bestValue = currentValue;
+            bestCombination = combination.slice();
+          }
+          return;
+        }
+        if (bound(level, currentValue, currentWeight) < bestValue) return; // prune
+        
+        // Explore including current item
+        combination.push(sortedItems[level]);
+        branch(level + 1, currentValue + sortedItems[level].value, currentWeight + sortedItems[level].weight, combination);
+        combination.pop();
+        
+        // Explore excluding current item
+        branch(level + 1, currentValue, currentWeight, combination);
+      }
+      
+      branch(0, 0, 0, []);
+      // Map bestCombination back to original order if needed.
+      optimalSolution = { bestValue, bestCombination };
+      bestValueSpan.textContent = bestValue;
+      totalWeightSpan.textContent = calculateTotalWeight(bestCombination);
+      combinationsCheckedSpan.textContent = '-'; // For branch and bound
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução Branch and Bound inclui os seguintes itens:</p>
+        <ul>
+          ${bestCombination.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${bestValue}</p>
+        <p>Peso Total: ${calculateTotalWeight(bestCombination)} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 4. Genetic Algorithm -----
+    function solveKnapsackGA() {
+      // Parameters for GA
+      const populationSize = 50;
+      const generations = 100;
+      const mutationRate = 0.05;
+      const n = items.length;
+  
+      // Create an initial population (each individual is an array of 0s and 1s)
+      function createIndividual() {
+        return Array.from({ length: n }, () => Math.random() < 0.5 ? 1 : 0);
+      }
+      let population = Array.from({ length: populationSize }, createIndividual);
+      
+      // Fitness function: if overweight, assign 0 fitness; otherwise, use total value.
+      function fitness(individual) {
+        let totalWeight = 0;
+        let totalValue = 0;
+        for (let i = 0; i < n; i++) {
+          if (individual[i] === 1) {
+            totalWeight += items[i].weight;
+            totalValue += items[i].value;
+          }
+        }
+        return totalWeight <= capacity ? totalValue : 0;
+      }
+      
+      // Selection: tournament selection
+      function selectIndividual() {
+        const tournamentSize = 3;
+        let best = null;
+        for (let i = 0; i < tournamentSize; i++) {
+          const ind = population[Math.floor(Math.random() * populationSize)];
+          if (best === null || fitness(ind) > fitness(best)) {
+            best = ind;
+          }
+        }
+        return best.slice();
+      }
+      
+      // Crossover: single-point crossover
+      function crossover(parent1, parent2) {
+        const crossoverPoint = Math.floor(Math.random() * n);
+        return parent1.slice(0, crossoverPoint).concat(parent2.slice(crossoverPoint));
+      }
+      
+      // Mutation: flip bit with some probability
+      function mutate(individual) {
+        return individual.map(bit => Math.random() < mutationRate ? 1 - bit : bit);
+      }
+      
+      let bestIndividual = null;
+      let bestIndividualFitness = 0;
+      // Evolve population
+      for (let gen = 0; gen < generations; gen++) {
+        const newPopulation = [];
+        for (let i = 0; i < populationSize; i++) {
+          const parent1 = selectIndividual();
+          const parent2 = selectIndividual();
+          let child = crossover(parent1, parent2);
+          child = mutate(child);
+          newPopulation.push(child);
+          const childFitness = fitness(child);
+          if (childFitness > bestIndividualFitness) {
+            bestIndividualFitness = childFitness;
+            bestIndividual = child.slice();
+          }
+        }
+        population = newPopulation;
+      }
+      
+      // Convert bestIndividual into a set of items
+      const selected = [];
+      for (let i = 0; i < n; i++) {
+        if (bestIndividual[i] === 1) {
+          selected.push(items[i]);
+        }
+      }
+      optimalSolution = { bestValue: bestIndividualFitness, bestCombination: selected };
+      bestValueSpan.textContent = optimalSolution.bestValue;
+      totalWeightSpan.textContent = calculateTotalWeight(selected);
+      combinationsCheckedSpan.textContent = '-';
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução Algoritmo Genético inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${optimalSolution.bestValue}</p>
+        <p>Peso Total: ${calculateTotalWeight(selected)} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 5. Simulated Annealing -----
+    function solveKnapsackSA() {
+      // Parameters for SA
+      let temperature = 100;
+      const coolingRate = 0.95;
+      const iterationsPerTemp = 50;
+      const n = items.length;
+      
+      // Generate an initial random solution (binary vector)
+      function randomSolution() {
+        return Array.from({ length: n }, () => Math.random() < 0.5 ? 1 : 0);
+      }
+      
+      // Compute fitness for SA (if overweight, fitness = 0)
+      function solutionFitness(sol) {
+        let weight = 0, value = 0;
+        for (let i = 0; i < n; i++) {
+          if (sol[i] === 1) {
+            weight += items[i].weight;
+            value += items[i].value;
+          }
+        }
+        return weight <= capacity ? value : 0;
+      }
+      
+      // Generate neighbor by flipping one random bit
+      function getNeighbor(sol) {
+        const neighbor = sol.slice();
+        const index = Math.floor(Math.random() * n);
+        neighbor[index] = 1 - neighbor[index];
+        return neighbor;
+      }
+      
+      let currentSolution = randomSolution();
+      let currentFitness = solutionFitness(currentSolution);
+      let bestSolution = currentSolution.slice();
+      let bestFitness = currentFitness;
+      
+      while (temperature > 1) {
+        for (let i = 0; i < iterationsPerTemp; i++) {
+          const neighbor = getNeighbor(currentSolution);
+          const neighborFitness = solutionFitness(neighbor);
+          const delta = neighborFitness - currentFitness;
+          if (delta > 0 || Math.exp(delta / temperature) > Math.random()) {
+            currentSolution = neighbor;
+            currentFitness = neighborFitness;
+          }
+          if (currentFitness > bestFitness) {
+            bestSolution = currentSolution.slice();
+            bestFitness = currentFitness;
+          }
+        }
+        temperature *= coolingRate;
+      }
+      
+      const selected = [];
+      let totalWeight = 0;
+      for (let i = 0; i < n; i++) {
+        if (bestSolution[i] === 1) {
+          selected.push(items[i]);
+          totalWeight += items[i].weight;
+        }
+      }
+      optimalSolution = { bestValue: bestFitness, bestCombination: selected };
+      bestValueSpan.textContent = bestFitness;
+      totalWeightSpan.textContent = totalWeight;
+      combinationsCheckedSpan.textContent = '-';
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução Simulated Annealing inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${bestFitness}</p>
+        <p>Peso Total: ${totalWeight} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 6. Approximation Algorithm (Simple Heuristic) -----
+    function solveKnapsackApprox() {
+      // A simple heuristic: sort by value descending (ignoring weight) and add items
+      const sortedItems = [...items].sort((a, b) => b.value - a.value);
+      let totalWeight = 0;
+      const selected = [];
+      for (const item of sortedItems) {
+        if (totalWeight + item.weight <= capacity) {
+          selected.push(item);
+          totalWeight += item.weight;
+        }
+      }
+      const totalValue = calculateTotalValue(selected);
+      optimalSolution = { bestValue: totalValue, bestCombination: selected };
+      bestValueSpan.textContent = totalValue;
+      totalWeightSpan.textContent = totalWeight;
+      combinationsCheckedSpan.textContent = '-';
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução Aproximação inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${totalValue}</p>
+        <p>Peso Total: ${totalWeight} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- 7. FPTAS (Fully Polynomial Time Approximation Scheme) -----
+    function solveKnapsackFPTAS() {
+      // User defined epsilon for approximation precision. Smaller epsilon -> more accurate and slower.
+      const epsilon = 0.2; // You can allow user to change this via an input
+      const n = items.length;
+      const maxValue = Math.max(...items.map(i => i.value));
+      // Scaling factor
+      const K = (epsilon * maxValue) / n;
+      // Scale item values
+      const scaledValues = items.map(item => Math.floor(item.value / K));
+      // DP based on scaled values
+      const sumScaled = scaledValues.reduce((acc, cur) => acc + cur, 0);
+      const dp = Array(n + 1).fill(0).map(() => Array(sumScaled + 1).fill(Infinity));
+      dp[0][0] = 0;
+      
+      for (let i = 1; i <= n; i++) {
+        const weight = items[i - 1].weight;
+        const valueScaled = scaledValues[i - 1];
+        for (let j = 0; j <= sumScaled; j++) {
+          if (j < valueScaled) {
+            dp[i][j] = dp[i - 1][j];
+          } else {
+            dp[i][j] = Math.min(dp[i - 1][j], dp[i - 1][j - valueScaled] + weight);
+          }
+        }
+      }
+      
+      // Find the maximum scaled value that fits in capacity
+      let bestScaledValue = 0;
+      for (let j = 0; j <= sumScaled; j++) {
+        if (dp[n][j] <= capacity) bestScaledValue = j;
+      }
+      // Now reconstruct selected items (a simple reconstruction by iterating backwards)
+      const selected = [];
+      let j = bestScaledValue;
+      for (let i = n; i > 0; i--) {
+        if (dp[i][j] !== dp[i - 1][j]) {
+          selected.push(items[i - 1]);
+          j -= scaledValues[i - 1];
+        }
+      }
+      
+      const approxValue = calculateTotalValue(selected);
+      optimalSolution = { bestValue: approxValue, bestCombination: selected };
+      bestValueSpan.textContent = approxValue;
+      totalWeightSpan.textContent = calculateTotalWeight(selected);
+      combinationsCheckedSpan.textContent = '-';
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução FPTAS inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total (Aproximado): $${approxValue}</p>
+        <p>Peso Total: ${calculateTotalWeight(selected)} kg</p>
+      `;
+      highlightSelectedItems();
+    }
+  
+    // ----- Optional: Show Algorithm Steps (For brute force method) -----
     function showAlgorithmSteps() {
       if (!optimalSolution) {
         solveKnapsack();
       }
-      
       stepsModal.style.display = 'flex';
-      
-      // Exibe todas as combinações
-      visualStepsDiv.innerHTML = '';
-      combinationsDisplayDiv.innerHTML = '';
-      
-      const stepsHtml = `
-        <p>1. Defina o problema: Temos ${items.length} itens e uma mochila com capacidade de ${capacity} kg.</p>
-        <p>2. Calcule o total de combinações possíveis: 2^${items.length} = ${optimalSolution.tries} combinações.</p>
-        <p>3. Verifique cada combinação para encontrar aquela com o valor máximo que não exceda a capacidade.</p>
-        <p>4. Solução ótima encontrada com valor $${optimalSolution.bestValue} e peso ${calculateTotalWeight(optimalSolution.bestCombination)} kg.</p>
+      visualStepsDiv.innerHTML = `
+        <p>1. Defina o problema: ${items.length} itens, capacidade de ${capacity} kg.</p>
+        <p>2. Total de combinações (brute force): ${optimalSolution.tries || 'N/A'}.</p>
+        <p>3. Avaliação e seleção da melhor solução conforme o método utilizado.</p>
       `;
       
-      visualStepsDiv.innerHTML = stepsHtml;
-      
-      // Exibe todas as combinações
-      optimalSolution.allCombinations.forEach((combo, index) => {
-        const combinationElement = document.createElement('div');
-        combinationElement.classList.add('combination-item');
-        
-        const itemsText = combo.combination.length > 0 
-          ? combo.combination.map(item => `Item ${item.id}`).join(', ')
-          : 'Nenhum item';
-        
-        combinationElement.innerHTML = `
-          <strong>Combinação ${index + 1}:</strong> [${itemsText}]
-          <br>Valor: $${combo.value}, Peso: ${combo.weight} kg
-          <strong>${combo.valid ? '✓ Válida' : '✗ Excede capacidade'}</strong>
-          ${(combo.valid && combo.value === optimalSolution.bestValue) ? ' <strong style="color: var(--warning);">ÓPTIMA</strong>' : ''}
-        `;
-        
-        if (!combo.valid) {
-          combinationElement.style.color = 'var(--danger)';
-        } else if (combo.value === optimalSolution.bestValue) {
-          combinationElement.style.backgroundColor = 'var(--warning)';
-          combinationElement.style.color = 'white';
-        }
-        
-        combinationsDisplayDiv.appendChild(combinationElement);
-      });
+      // Optionally list combinations (only for brute force)
+      if (optimalSolution.allCombinations) {
+        combinationsDisplayDiv.innerHTML = '';
+        optimalSolution.allCombinations.forEach((combo, index) => {
+          const combinationElement = document.createElement('div');
+          combinationElement.classList.add('combination-item');
+          const itemsText = combo.combination.length > 0 
+            ? combo.combination.map(item => `Item ${item.id}`).join(', ')
+            : 'Nenhum item';
+          combinationElement.innerHTML = `
+            <strong>Combinação ${index + 1}:</strong> [${itemsText}]<br>
+            Valor: $${combo.value}, Peso: ${combo.weight} kg
+            <strong>${combo.valid ? '✓ Válida' : '✗ Excede capacidade'}</strong>
+          `;
+          if (!combo.valid) {
+            combinationElement.style.color = 'var(--danger)';
+          } else if (combo.value === optimalSolution.bestValue) {
+            combinationElement.style.backgroundColor = 'var(--warning)';
+            combinationElement.style.color = 'white';
+          }
+          combinationsDisplayDiv.appendChild(combinationElement);
+        });
+      }
     }
   </script>
+  
 </body>
 </html>
