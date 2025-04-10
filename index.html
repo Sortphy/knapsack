@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solucionador Interativo do Problema da Mochila</title>
+  <style>
+    :root {
+      --primary: #3498db;
+      --secondary: #2ecc71;
+      --danger: #e74c3c;
+      --warning: #f39c12;
+      --dark: #2c3e50;
+      --light: #ecf0f1;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--light);
+      margin: 0;
+      padding: 0;
+      color: var(--dark);
+    }
+    
+    header {
+      background-color: #07ef73;
+      color: black;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    h1 {
+      margin: 0;
+      font-size: 2rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem;
+    }
+    
+    .intro {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 2rem;
+    }
+    
+    .flex-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+    
+    .control-panel {
+      flex: 1;
+      min-width: 300px;
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .visualization {
+      flex: 2;
+      min-width: 300px;
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .backpack {
+      position: relative;
+      width: 200px;
+      height: 240px;
+      margin: 2rem auto;
+      background-image: url('/images/backpack.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+    }
+    
+    .placeholder-backpack {
+      position: relative;
+      width: 200px;
+      height: 240px;
+      margin: 2rem auto;
+      background-color: #34495e;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .items-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .item {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      background-color: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .item.selected {
+      background-color: var(--secondary);
+      transform: translateY(-5px);
+      box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+    }
+    
+    .item.in-optimal {
+      background-color: var(--warning);
+    }
+    
+    .item-value {
+      font-size: 1.2rem;
+    }
+    
+    .item-weight {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    
+    .result-panel {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .result-stats {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    
+    .stat-card {
+      flex: 1;
+      padding: 1rem;
+      background-color: var(--light);
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--primary);
+      margin: 0.5rem 0;
+    }
+    
+    button {
+      background-color: var(--primary);
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.2s;
+      margin-right: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    button:hover {
+      background-color: #2980b9;
+    }
+    
+    button.generate {
+      background-color: var(--secondary);
+    }
+    
+    button.generate:hover {
+      background-color: #27ae60;
+    }
+    
+    button.solve {
+      background-color: var(--warning);
+    }
+    
+    button.solve:hover {
+      background-color: #e67e22;
+    }
+    
+    input, select {
+      padding: 0.75rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 1rem;
+      width: 100%;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+    }
+    
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+    
+    .algorithm-info {
+      margin-top: 2rem;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+    }
+    
+    .capacity-bar {
+      height: 20px;
+      background-color: #ddd;
+      border-radius: 10px;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    
+    .capacity-fill {
+      height: 100%;
+      background-color: var(--primary);
+      width: 0%;
+      transition: width 0.5s;
+    }
+    
+    .optimal-solution {
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 8px;
+      margin-top: 1rem;
+      border-left: 4px solid var(--warning);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    
+    .modal-content {
+      background-color: white;
+      padding: 2rem;
+      border-radius: 8px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
+    
+    .combinations-display {
+      margin-top: 1rem;
+      max-height: 200px;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    .combination-item {
+      padding: 0.5rem;
+      margin-bottom: 0.5rem;
+      border-radius: 4px;
+    }
+    
+    .combination-item:nth-child(odd) {
+      background-color: #e9ecef;
+    }
+    
+    .visual-steps {
+      max-height: 300px;
+      overflow-y: auto;
+      padding: 1rem;
+      background-color: #f8f9fa;
+      border-radius: 4px;
+    }
+    
+    @media (max-width: 768px) {
+      .flex-container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Solucionador Interativo do Problema da Mochila</h1>
+    <p>Feito por Sortphy - github.com/Sortphy</p>
+  </header>
+  
+  <div class="container">
+    <div class="intro">
+      <h2>O Problema da Mochila</h2>
+      <p>O problema da mochila é um desafio clássico de otimização: dado um conjunto de itens com valores e pesos específicos, determine quais itens incluir de forma que o peso total seja menor ou igual a um limite determinado (a capacidade da mochila) e que o valor total seja o maior possível.</p>
+      <p>Esta ferramenta interativa permite que você explore o problema gerando itens aleatórios, selecionando combinações manualmente ou utilizando o algoritmo de força bruta para encontrar a solução ótima.</p>
+    </div>
+    
+    <div class="flex-container">
+      <div class="control-panel">
+        <h3>Painel de Controle</h3>
+        
+        <div class="form-group">
+          <label for="capacity-input">Capacidade da Mochila:</label>
+          <input type="number" id="capacity-input" min="1" max="20" value="10">
+        </div>
+        
+        <div class="form-group">
+          <label for="item-count">Número de Itens:</label>
+          <input type="number" id="item-count" min="1" max="10" value="5">
+        </div>
+        
+        <button class="generate" id="generate-btn">Gerar Itens Aleatórios</button>
+        
+        <div class="form-group">
+          <label>Algoritmo:</label>
+          <select id="algorithm-select">
+            <option value="bruteforce">Força Bruta</option>
+          </select>
+        </div>
+        
+        <button class="solve" id="solve-btn">Encontrar Melhor Solução</button>
+        <button id="reset-btn">Redefinir Seleção</button>
+        <button id="show-steps-btn">Mostrar Etapas do Algoritmo</button>
+        
+        <div class="capacity-status">
+          <p>Peso Atual: <span id="current-weight">0</span>/<span id="max-capacity">10</span></p>
+          <div class="capacity-bar">
+            <div class="capacity-fill" id="capacity-fill"></div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="visualization">
+        <h3>Itens</h3>
+        <div class="items-container" id="items-container">
+          <!-- Os itens serão gerados aqui -->
+        </div>
+        
+        <h3>Sua Mochila</h3>
+        <div class="placeholder-backpack" id="backpack">
+          <span>Capacidade: 10</span>
+        </div>
+        
+        <div class="current-selection">
+          <h3>Seleção Atual</h3>
+          <p>Valor: <span id="selection-value">0</span></p>
+          <p>Peso: <span id="selection-weight">0</span></p>
+          <div id="selected-items" class="items-container">
+            <!-- Os itens selecionados aparecerão aqui -->
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="result-panel" id="result-panel" style="display: none;">
+      <h3>Solução Ótima</h3>
+      <div class="optimal-solution" id="optimal-solution">
+        <!-- A solução ótima será exibida aqui -->
+      </div>
+      
+      <div class="result-stats">
+        <div class="stat-card">
+          <h4>Melhor Valor</h4>
+          <div class="stat-value" id="best-value">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Peso Total</h4>
+          <div class="stat-value" id="total-weight">0</div>
+        </div>
+        <div class="stat-card">
+          <h4>Combinações Verificadas</h4>
+          <div class="stat-value" id="combinations-checked">0</div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="algorithm-info">
+      <h3>Sobre o Algoritmo</h3>
+      <p>Esta implementação utiliza a abordagem de força bruta para resolver o problema da mochila. Ela verifica todas as combinações possíveis de itens (2^n, onde n é o número de itens) e seleciona a combinação com o maior valor que não exceda a capacidade.</p>
+      <p>Embora a força bruta garanta encontrar a solução ótima, ela se torna ineficiente para um grande número de itens. Por exemplo, com apenas 20 itens, haveria mais de 1 milhão de combinações para verificar!</p>
+    </div>
+  </div>
+  
+  <div class="modal" id="steps-modal">
+    <div class="modal-content">
+      <span class="close-modal" id="close-modal">&times;</span>
+      <h2>Etapas do Algoritmo</h2>
+      <p>Esta visualização mostra como o algoritmo de força bruta funciona, verificando todas as combinações possíveis de itens.</p>
+      
+      <div class="visual-steps" id="visual-steps">
+        <!-- As etapas serão exibidas aqui -->
+      </div>
+      
+      <h3>Todas as Combinações</h3>
+      <div class="combinations-display" id="combinations-display">
+        <!-- As combinações serão exibidas aqui -->
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    class Item {
+      constructor(value, weight, id) {
+        this.value = value;
+        this.weight = weight;
+        this.id = id;
+      }
+    }
+    
+    // Variáveis globais
+    let items = [];
+    let selectedItems = [];
+    let capacity = 10;
+    let optimalSolution = null;
+    
+    // Elementos DOM
+    const itemsContainer = document.getElementById('items-container');
+    const selectedItemsContainer = document.getElementById('selected-items');
+    const capacityInput = document.getElementById('capacity-input');
+    const itemCountInput = document.getElementById('item-count');
+    const generateBtn = document.getElementById('generate-btn');
+    const solveBtn = document.getElementById('solve-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const showStepsBtn = document.getElementById('show-steps-btn');
+    const currentWeightSpan = document.getElementById('current-weight');
+    const maxCapacitySpan = document.getElementById('max-capacity');
+    const capacityFill = document.getElementById('capacity-fill');
+    const selectionValueSpan = document.getElementById('selection-value');
+    const selectionWeightSpan = document.getElementById('selection-weight');
+    const backpack = document.getElementById('backpack');
+    const resultPanel = document.getElementById('result-panel');
+    const bestValueSpan = document.getElementById('best-value');
+    const totalWeightSpan = document.getElementById('total-weight');
+    const combinationsCheckedSpan = document.getElementById('combinations-checked');
+    const optimalSolutionDiv = document.getElementById('optimal-solution');
+    const stepsModal = document.getElementById('steps-modal');
+    const closeModal = document.getElementById('close-modal');
+    const visualStepsDiv = document.getElementById('visual-steps');
+    const combinationsDisplayDiv = document.getElementById('combinations-display');
+    
+    // Inicialização
+    initialize();
+    
+    function initialize() {
+      capacity = parseInt(capacityInput.value);
+      maxCapacitySpan.textContent = capacity;
+      backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
+      
+      // Adiciona os eventos
+      generateBtn.addEventListener('click', generateItems);
+      solveBtn.addEventListener('click', solveKnapsack);
+      resetBtn.addEventListener('click', resetSelection);
+      showStepsBtn.addEventListener('click', showAlgorithmSteps);
+      closeModal.addEventListener('click', () => stepsModal.style.display = 'none');
+      
+      capacityInput.addEventListener('change', () => {
+        capacity = parseInt(capacityInput.value);
+        maxCapacitySpan.textContent = capacity;
+        backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
+        updateCapacityBar();
+      });
+      
+      // Geração inicial
+      generateItems();
+    }
+    
+    function generateRandomItems(count) {
+      const newItems = [];
+      for (let i = 0; i < count; i++) {
+        const value = Math.floor(Math.random() * 10) + 1;  // 1 a 10
+        const weight = Math.floor(Math.random() * 7) + 1;  // 1 a 7
+        newItems.push(new Item(value, weight, i + 1));
+      }
+      return newItems;
+    }
+    
+    function generateItems() {
+      const count = parseInt(itemCountInput.value);
+      items = generateRandomItems(count);
+      selectedItems = [];
+      optimalSolution = null;
+      
+      renderItems();
+      updateSelection();
+      resultPanel.style.display = 'none';
+    }
+    
+    function renderItems() {
+      itemsContainer.innerHTML = '';
+      
+      items.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.classList.add('item');
+        itemElement.dataset.id = item.id;
+        
+        itemElement.innerHTML = `
+          <div class="item-value">$${item.value}</div>
+          <div class="item-weight">${item.weight} kg</div>
+        `;
+        
+        itemElement.addEventListener('click', () => toggleItemSelection(item));
+        
+        itemsContainer.appendChild(itemElement);
+      });
+    }
+    
+    function toggleItemSelection(item) {
+      const index = selectedItems.findIndex(i => i.id === item.id);
+      
+      if (index === -1) {
+        selectedItems.push(item);
+      } else {
+        selectedItems.splice(index, 1);
+      }
+      
+      updateSelection();
+      highlightSelectedItems();
+    }
+    
+    function highlightSelectedItems() {
+      // Reinicia a seleção de todos os itens
+      document.querySelectorAll('.item').forEach(el => {
+        el.classList.remove('selected');
+      });
+      
+      // Destaca os itens selecionados
+      selectedItems.forEach(item => {
+        const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
+        if (itemElement) {
+          itemElement.classList.add('selected');
+        }
+      });
+      
+      // Destaca os itens da solução ótima, se existir
+      if (optimalSolution) {
+        document.querySelectorAll('.item').forEach(el => {
+          el.classList.remove('in-optimal');
+        });
+        
+        optimalSolution.bestCombination.forEach(item => {
+          const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
+          if (itemElement) {
+            itemElement.classList.add('in-optimal');
+          }
+        });
+      }
+    }
+    
+    function updateSelection() {
+      const currentWeight = calculateTotalWeight(selectedItems);
+      const currentValue = calculateTotalValue(selectedItems);
+      
+      currentWeightSpan.textContent = currentWeight;
+      selectionValueSpan.textContent = currentValue;
+      selectionWeightSpan.textContent = currentWeight;
+      
+      updateCapacityBar();
+      renderSelectedItems();
+    }
+    
+    function updateCapacityBar() {
+      const currentWeight = calculateTotalWeight(selectedItems);
+      const percentage = Math.min((currentWeight / capacity) * 100, 100);
+      capacityFill.style.width = `${percentage}%`;
+      
+      if (currentWeight > capacity) {
+        capacityFill.style.backgroundColor = 'var(--danger)';
+      } else {
+        capacityFill.style.backgroundColor = 'var(--primary)';
+      }
+    }
+    
+    function renderSelectedItems() {
+      selectedItemsContainer.innerHTML = '';
+      
+      if (selectedItems.length === 0) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.textContent = 'Nenhum item selecionado ainda. Clique nos itens para adicioná-los à sua mochila.';
+        selectedItemsContainer.appendChild(emptyMessage);
+        return;
+      }
+      
+      selectedItems.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.classList.add('item');
+        itemElement.classList.add('selected');
+        
+        itemElement.innerHTML = `
+          <div class="item-value">$${item.value}</div>
+          <div class="item-weight">${item.weight} kg</div>
+        `;
+        
+        selectedItemsContainer.appendChild(itemElement);
+      });
+    }
+    
+    function calculateTotalWeight(itemsList) {
+      return itemsList.reduce((sum, item) => sum + item.weight, 0);
+    }
+    
+    function calculateTotalValue(itemsList) {
+      return itemsList.reduce((sum, item) => sum + item.value, 0);
+    }
+    
+    function resetSelection() {
+      selectedItems = [];
+      updateSelection();
+      highlightSelectedItems();
+    }
+    
+    function bruteForceKnapsack(items, capacity) {
+      let bestValue = 0;
+      let bestCombination = [];
+      const n = items.length;
+      const totalCombinations = 1 << n; // equivalente a 2^n
+      let tries = 0;
+      const allCombinations = [];
+      
+      // Percorre todas as combinações possíveis
+      for (let i = 0; i < totalCombinations; i++) {
+        tries++;
+        let currentValue = 0;
+        let currentWeight = 0;
+        let combination = [];
+        
+        // Verifica cada posição de bit
+        for (let j = 0; j < n; j++) {
+          // Se o j-ésimo bit em i estiver ativo, inclui items[j]
+          if (i & (1 << j)) {
+            currentValue += items[j].value;
+            currentWeight += items[j].weight;
+            combination.push(items[j]);
+          }
+        }
+        
+        allCombinations.push({
+          combination,
+          value: currentValue,
+          weight: currentWeight,
+          valid: currentWeight <= capacity
+        });
+        
+        // Se a combinação for válida e tiver um valor superior ao melhor até então, atualiza a melhor
+        if (currentWeight <= capacity && currentValue > bestValue) {
+          bestValue = currentValue;
+          bestCombination = combination;
+        }
+      }
+      
+      return { bestValue, bestCombination, tries, allCombinations };
+    }
+    
+    function solveKnapsack() {
+      optimalSolution = bruteForceKnapsack(items, capacity);
+      
+      bestValueSpan.textContent = optimalSolution.bestValue;
+      totalWeightSpan.textContent = calculateTotalWeight(optimalSolution.bestCombination);
+      combinationsCheckedSpan.textContent = optimalSolution.tries;
+      
+      // Exibe a solução ótima
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = '';
+      
+      if (optimalSolution.bestCombination.length === 0) {
+        optimalSolutionDiv.innerHTML = '<p>Nenhuma combinação válida encontrada.</p>';
+      } else {
+        const optimalHtml = `
+          <p>A solução ótima inclui os seguintes itens:</p>
+          <ul>
+            ${optimalSolution.bestCombination.map(item => 
+              `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`
+            ).join('')}
+          </ul>
+          <p>Valor Total: $${optimalSolution.bestValue}</p>
+          <p>Peso Total: ${calculateTotalWeight(optimalSolution.bestCombination)} kg</p>
+        `;
+        
+        optimalSolutionDiv.innerHTML = optimalHtml;
+      }
+      
+      highlightSelectedItems();
+    }
+    
+    function showAlgorithmSteps() {
+      if (!optimalSolution) {
+        solveKnapsack();
+      }
+      
+      stepsModal.style.display = 'flex';
+      
+      // Exibe todas as combinações
+      visualStepsDiv.innerHTML = '';
+      combinationsDisplayDiv.innerHTML = '';
+      
+      const stepsHtml = `
+        <p>1. Defina o problema: Temos ${items.length} itens e uma mochila com capacidade de ${capacity} kg.</p>
+        <p>2. Calcule o total de combinações possíveis: 2^${items.length} = ${optimalSolution.tries} combinações.</p>
+        <p>3. Verifique cada combinação para encontrar aquela com o valor máximo que não exceda a capacidade.</p>
+        <p>4. Solução ótima encontrada com valor $${optimalSolution.bestValue} e peso ${calculateTotalWeight(optimalSolution.bestCombination)} kg.</p>
+      `;
+      
+      visualStepsDiv.innerHTML = stepsHtml;
+      
+      // Exibe todas as combinações
+      optimalSolution.allCombinations.forEach((combo, index) => {
+        const combinationElement = document.createElement('div');
+        combinationElement.classList.add('combination-item');
+        
+        const itemsText = combo.combination.length > 0 
+          ? combo.combination.map(item => `Item ${item.id}`).join(', ')
+          : 'Nenhum item';
+        
+        combinationElement.innerHTML = `
+          <strong>Combinação ${index + 1}:</strong> [${itemsText}]
+          <br>Valor: $${combo.value}, Peso: ${combo.weight} kg
+          <strong>${combo.valid ? '✓ Válida' : '✗ Excede capacidade'}</strong>
+          ${(combo.valid && combo.value === optimalSolution.bestValue) ? ' <strong style="color: var(--warning);">ÓPTIMA</strong>' : ''}
+        `;
+        
+        if (!combo.valid) {
+          combinationElement.style.color = 'var(--danger)';
+        } else if (combo.value === optimalSolution.bestValue) {
+          combinationElement.style.backgroundColor = 'var(--warning)';
+          combinationElement.style.color = 'white';
+        }
+        
+        combinationsDisplayDiv.appendChild(combinationElement);
+      });
+    }
+  </script>
+</body>
+</html>
