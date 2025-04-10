@@ -311,6 +311,21 @@
       background-color: #f8f9fa;
       border-radius: 4px;
     }
+
+    .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    text-align: center;
+    }
+
+.logo {
+  height: 100px;
+  width: auto;
+}
+
     
     @media (max-width: 768px) {
       .flex-container {
@@ -321,9 +336,15 @@
 </head>
 <body>
     <header>
-        <h1>Solucionador Interativo do Problema da Mochila</h1>
-        <p>Feito por Sortphy - <a href="https://github.com/Sortphy" target="_blank">github.com/Sortphy</a></p>
-      </header>      
+        <div class="header-content">
+          <img src="./images/sortphy.png" alt="Sortphy Logo" class="logo">
+          <div>
+            <h1>Solucionador Interativo do Problema da Mochila</h1>
+            <p>Feito por Sortphy - <a href="https://github.com/Sortphy" target="_blank">github.com/Sortphy</a></p>
+          </div>
+        </div>
+      </header>
+          
   
   <div class="container">
     <div class="intro">
