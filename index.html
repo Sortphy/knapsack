@@ -502,6 +502,7 @@
           <select id="algorithm-select" title="Escolha o algoritmo baseado no tamanho do problema e na precisão desejada">
             <option value="bruteforce" title="Garante solução ótima, mas é muito lento com mais de 20 itens">Força Bruta</option>
             <option value="dp" title="Bom para problemas médios, complexidade O(n*W)">Programação Dinâmica</option>
+            <option value="dp_recursive" title="Implementação recursiva com memoization">Programação Dinâmica (Recursiva)</option>
             <option value="greedy" title="Rápido mas não garante solução ótima">Algoritmo Guloso</option>
             <option value="bnb" title="Mais eficiente que força bruta, usa poda de ramos">Branch and Bound</option>
             <option value="ga" title="Bom para problemas grandes, usa evolução de população">Algoritmo Genético</option>
@@ -581,6 +582,7 @@
       <ul>
         <li><strong>Força Bruta:</strong> Garante a solução ótima mas é ineficiente para muitos itens (2^n combinações).</li>
         <li><strong>Programação Dinâmica:</strong> Eficiente para problemas com capacidade moderada (O(n*W)).</li>
+        <li><strong>Programação Dinâmica (Recursiva):</strong> Usa recursividade com memoization para armazenar resultados em cache e evitar recálculos (O(n*W)).</li>
         <li><strong>Algoritmo Guloso:</strong> Rápido mas não garante solução ótima, usa razão valor/peso.</li>
         <li><strong>Branch and Bound:</strong> Mais eficiente que força bruta, usa poda de ramos.</li>
         <li><strong>Algoritmo Genético:</strong> Boa para problemas grandes, usa evolução de população.</li>
@@ -952,6 +954,9 @@
         case 'dp':
           solution = solveKnapsackDP();
           return; // DP handles its own display
+        case 'dp_recursive':
+          solution = solveKnapsackDPRecursive();
+          return; // Recursive DP handles its own display
         case 'greedy':
           solution = solveKnapsackGreedy();
           return; // Greedy handles its own display
@@ -1621,6 +1626,34 @@
             <p>5. Garantia de aproximação: (1-ε) do valor ótimo.</p>
           `;
           break;
+        case 'dp_recursive':
+          if (!optimalSolution) {
+            solveKnapsack();
+          }
+          visualStepsDiv.innerHTML = `
+            <p>1. Preparação do cache (hashtable) para memoization.</p>
+            <p>2. Início da recursão a partir do problema completo.</p>
+            <p>3. Para cada chamada recursiva:</p>
+            <ul>
+              <li>Verificação se o resultado está no cache</li>
+              <li>Se estiver, retornar imediatamente (acesso O(1))</li>
+              <li>Se não estiver, calcular resultado e armazenar no cache</li>
+            </ul>
+            <p>4. Total de subproblemas memorizados: ${optimalSolution.memoSize || 'N/A'}</p>
+            <p>5. Total de etapas: ${optimalSolution.steps}</p>
+          `;
+          combinationsDisplayDiv.innerHTML = `
+            <p>Usando abordagem recursiva com memoization (top-down), podemos resolver o problema evitando recálculos.</p>
+            <p>Cada subproblema é resolvido apenas uma vez e seu resultado é armazenado no cache.</p>
+            <p>O cache é implementado como uma hashtable, garantindo acesso em tempo O(1).</p>
+            <p>O algoritmo resolve o problema recursivamente, decidindo para cada item:</p>
+            <ul>
+              <li>Incluir o item na mochila</li>
+              <li>Não incluir o item na mochila</li>
+            </ul>
+            <p>Escolhendo a opção que maximiza o valor total.</p>
+          `;
+          break;
       }
     }
 
@@ -1949,6 +1982,60 @@
             <div class="complexity-badge">Complexidade: O(n²/ε)</div>
           `;
           break;
+        case 'dp_recursive':
+          title = 'Programação Dinâmica (Recursiva)';
+          explanation = `
+            <div class="explanation-step">
+              <h3>Como Funciona?</h3>
+              <p>A programação dinâmica recursiva com memoization resolve o problema da mochila através de uma abordagem de cima para baixo (top-down). Ela utiliza uma função recursiva que verifica se um subproblema já foi resolvido anteriormente, consultando um cache implementado como uma hashtable.</p>
+              <div class="visual-example">
+                <p>O algoritmo segue estes passos:</p>
+                <ol>
+                  <li>Define uma função recursiva que calcula o valor máximo possível para um subconjunto de itens e uma capacidade restante</li>
+                  <li>Antes de calcular, verifica se o resultado já está armazenado no cache (memoization)</li>
+                  <li>Se já estiver no cache, retorna o resultado imediatamente (acesso em O(1))</li>
+                  <li>Se não estiver no cache, calcula o resultado e o armazena para uso futuro</li>
+                  <li>Para cada item, decide entre duas opções: incluir o item ou não incluir</li>
+                </ol>
+              </div>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Memoization</h3>
+              <p>A memoization é a técnica que torna esta abordagem eficiente. Ela usa uma hashtable (objeto em JavaScript) para armazenar os resultados de subproblemas:</p>
+              <pre>
+// Cache de resultados (hashtable)
+const memo = {};
+
+// Verificação do cache
+if (memo[key]) return memo[key];
+
+// Armazenamento no cache
+memo[key] = resultado;
+              </pre>
+              <p>Cada subproblema é identificado por uma chave única composta pelo índice do item atual e pela capacidade restante.</p>
+            </div>
+            
+            <div class="explanation-step">
+              <h3>Vantagens e Desvantagens</h3>
+              <p><strong>Vantagens:</strong></p>
+              <ul>
+                <li>Garante solução ótima</li>
+                <li>Calcula apenas os subproblemas necessários (ao contrário da abordagem bottom-up)</li>
+                <li>Fácil de entender a lógica recursiva</li>
+                <li>Evita recálculos de subproblemas já resolvidos</li>
+              </ul>
+              <p><strong>Desvantagens:</strong></p>
+              <ul>
+                <li>Pode ter sobrecarga com muitas chamadas recursivas</li>
+                <li>Possível estouro de pilha para problemas muito grandes</li>
+                <li>Ligeiramente menos eficiente que a versão iterativa em alguns casos</li>
+              </ul>
+            </div>
+            
+            <div class="complexity-badge">Complexidade: O(n*W) tempo, O(n*W) espaço</div>
+          `;
+          break;
       }
       
       explanationTitle.textContent = `Explicação: ${title}`;
@@ -1961,6 +2048,91 @@
         explanationModal.style.display = 'none';
       }
     });
+
+    // ----- Add after other algorithm implementations -----
+    // ----- Recursive Dynamic Programming with Memoization -----
+    function solveKnapsackDPRecursive() {
+      const startTime = performance.now();
+      const n = items.length;
+      let steps = 0;
+      
+      // Create a cache object (hashtable) for memoization
+      // We'll use a string key "i_c" where i is the item index and c is the remaining capacity
+      const memo = {};
+      
+      // Define the recursive function with memoization
+      function knapsackRecursive(i, remainingCapacity) {
+        steps++;
+        
+        // Base case: no items left or no capacity
+        if (i === 0 || remainingCapacity === 0) {
+          return { value: 0, selected: [] };
+        }
+        
+        // Create a key for the memo cache
+        const key = `${i}_${remainingCapacity}`;
+        
+        // Check if we've already solved this subproblem (memoization)
+        if (memo[key]) {
+          return memo[key];
+        }
+        
+        const currentItem = items[i - 1];
+        
+        // If current item is too heavy, skip it
+        if (currentItem.weight > remainingCapacity) {
+          return memo[key] = knapsackRecursive(i - 1, remainingCapacity);
+        }
+        
+        // Try two options: include current item or skip it
+        // Option 1: Skip current item
+        const skipItem = knapsackRecursive(i - 1, remainingCapacity);
+        
+        // Option 2: Include current item
+        const includeItemResult = knapsackRecursive(i - 1, remainingCapacity - currentItem.weight);
+        const includeItem = {
+          value: includeItemResult.value + currentItem.value,
+          selected: [...includeItemResult.selected, currentItem]
+        };
+        
+        // Choose the better option
+        const result = includeItem.value > skipItem.value ? includeItem : skipItem;
+        
+        // Store the result in the memo cache
+        memo[key] = result;
+        
+        return result;
+      }
+      
+      // Call the recursive function to solve the problem
+      const result = knapsackRecursive(n, capacity);
+      const selected = result.selected;
+      const endTime = performance.now();
+      const executionTime = endTime - startTime;
+      
+      // Display result
+      document.getElementById('execution-time').textContent = `${executionTime.toFixed(2)} ms`;
+      optimalSolution = { 
+        bestValue: result.value, 
+        bestCombination: selected, 
+        steps,
+        memoSize: Object.keys(memo).length // Number of subproblems memoized
+      };
+      bestValueSpan.textContent = optimalSolution.bestValue;
+      totalWeightSpan.textContent = calculateTotalWeight(selected);
+      stepsTakenSpan.textContent = steps;
+      resultPanel.style.display = 'block';
+      optimalSolutionDiv.innerHTML = `
+        <p>Solução DP Recursiva (com Memoization) inclui os seguintes itens:</p>
+        <ul>
+          ${selected.map(item => `<li>Item ${item.id}: Valor = $${item.value}, Peso = ${item.weight} kg</li>`).join('')}
+        </ul>
+        <p>Valor Total: $${optimalSolution.bestValue}</p>
+        <p>Peso Total: ${calculateTotalWeight(selected)} kg</p>
+        <p>Subproblemas memorizados: ${optimalSolution.memoSize}</p>
+      `;
+      highlightSelectedItems();
+    }
   </script>
   
 </body>
