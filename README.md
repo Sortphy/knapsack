@@ -7,7 +7,6 @@
 - Maruan Biasi
 - Icaro Botelho
 - Gustavo Martins
-- Thiago Saraiva
 - Mauricio
 
 -------
