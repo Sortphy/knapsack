@@ -1,7 +1,7 @@
 // We're using local implementations of the knapsack algorithms
 // instead of importing them as modules to avoid potential issues
 
- class Item {
+class Item {
   constructor(value, weight, id) {
     this.value = value;
     this.weight = weight;
