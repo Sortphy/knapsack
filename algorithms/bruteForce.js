@@ -6,6 +6,8 @@
  * @returns {Object} - Result with bestValue, bestCombination, steps and allCombinations
  */
 function bruteForceKnapsack(items, capacity) {
+  console.log("bruteForceKnapsack called with items:", items, "capacity:", capacity);
+  
   let bestValue = 0;
   let bestCombination = [];
   const n = items.length;
@@ -21,9 +23,11 @@ function bruteForceKnapsack(items, capacity) {
     for (let j = 0; j < n; j++) {
       steps++;
       if (i & (1 << j)) {
-        currentValue += items[j].value;
-        currentWeight += items[j].weight;
-        combination.push(items[j]);
+        // Make sure we're preserving the original item object with its id
+        const item = items[j];
+        currentValue += item.value;
+        currentWeight += item.weight;
+        combination.push(item);
       }
     }
     allCombinations.push({
@@ -34,9 +38,12 @@ function bruteForceKnapsack(items, capacity) {
     });
     if (currentWeight <= capacity && currentValue > bestValue) {
       bestValue = currentValue;
-      bestCombination = combination;
+      // Make sure we copy the array to avoid references
+      bestCombination = [...combination];
     }
   }
+  
+  console.log("bruteForceKnapsack returned bestCombination:", bestCombination);
   return { bestValue, bestCombination, steps, allCombinations };
 }
 

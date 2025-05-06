@@ -1,20 +1,7 @@
-// Import all algorithms from the algorithms folder
-import {
-  bruteForceKnapsack,
-  dynamicProgrammingKnapsack,
-  dynamicProgrammingRecursiveKnapsack,
-  greedyKnapsack,
-  branchAndBoundKnapsack,
-  geneticAlgorithmKnapsack,
-  simulatedAnnealingKnapsack,
-  antColonyKnapsack,
-  particleSwarmKnapsack,
-  cuckooSearchKnapsack,
-  approximationKnapsack,
-  fptasKnapsack
-} from './algorithms/index.js';
+// We're using local implementations of the knapsack algorithms
+// instead of importing them as modules to avoid potential issues
 
-class Item {
+ class Item {
   constructor(value, weight, id) {
     this.value = value;
     this.weight = weight;
@@ -64,9 +51,14 @@ const algorithmExplanation = document.getElementById('algorithm-explanation');
 initialize();
 
 function initialize() {
+  console.log("Initializing application...");
+  
+  // Initialize capacity
   capacity = parseInt(capacityInput.value);
   maxCapacitySpan.textContent = capacity;
   backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
+  
+  console.log("Initial capacity set to:", capacity);
 
   // Add event listeners
   generateBtn.addEventListener('click', generateItems);
@@ -82,10 +74,14 @@ function initialize() {
     maxCapacitySpan.textContent = capacity;
     backpack.querySelector('span').textContent = `Capacidade: ${capacity}`;
     updateCapacityBar();
+    console.log("Capacity updated to:", capacity);
   });
 
   // Initial generation
+  console.log("Generating initial items...");
   generateItems();
+  
+  console.log("Initialization complete");
 }
 
 function generateRandomItems(count) {
@@ -103,6 +99,8 @@ function generateRandomItems(count) {
     alert('O valor mínimo não pode ser maior que o valor máximo!');
     return [];
   }
+  
+  console.log("Generating items with values between", minValue, "and", maxValue, "and weights between", minWeight, "and", maxWeight);
   
   for (let i = 0; i < count; i++) {
     let value, weight;
@@ -123,8 +121,15 @@ function generateRandomItems(count) {
     
     usedValues.add(value);
     usedWeights.add(weight);
-    newItems.push(new Item(value, weight, i + 1));
+    
+    // Create a new item with a unique id
+    const item = new Item(value, weight, i + 1);
+    newItems.push(item);
+    
+    console.log(`Created item ${i+1}: value=${value}, weight=${weight}`);
   }
+  
+  console.log("Generated", newItems.length, "items");
   return newItems;
 }
 
@@ -175,31 +180,86 @@ document.getElementById('algorithm-select').addEventListener('change', validateI
 
 // Update generateItems to use validation
 function generateItems() {
+  // Validate inputs first
   if (!validateInputs()) {
     alert('Por favor, corrija os valores inválidos antes de gerar itens.');
     return;
   }
+  
+  // Get the number of items to generate
   const count = parseInt(itemCountInput.value);
-  items = generateRandomItems(count);
-  selectedItems = [];
-  optimalSolution = null;
-
-  renderItems();
-  updateSelection();
-  resultPanel.style.display = 'none';
+  console.log(`Generating ${count} items...`);
+  
+  // Get the min/max values
+  const minValue = parseInt(document.getElementById('min-value').value);
+  const maxValue = parseInt(document.getElementById('max-value').value);
+  const minWeight = parseInt(document.getElementById('min-weight').value);
+  const maxWeight = parseInt(document.getElementById('max-weight').value);
+  
+  try {
+    // Generate new random items
+    items = [];
+    for (let i = 0; i < count; i++) {
+      // Generate random value and weight within ranges
+      const value = Math.floor(Math.random() * (maxValue - minValue + 1)) + minValue;
+      const weight = Math.floor(Math.random() * (maxWeight - minWeight + 1)) + minWeight;
+      
+      // Create a new item with a unique ID
+      const item = {
+        id: i + 1,
+        value: value,
+        weight: weight
+      };
+      
+      // Add to items array
+      items.push(item);
+    }
+    
+    console.log(`Successfully generated ${items.length} items:`, items);
+    
+    // Reset selected items and optimal solution
+    selectedItems = [];
+    optimalSolution = null;
+    
+    // Render the items on the page
+    renderItems();
+    updateSelection();
+    resultPanel.style.display = 'none';
+  } catch (error) {
+    console.error("Error generating items:", error);
+    alert("Erro ao gerar itens: " + error.message);
+  }
 }
 
 function renderItems() {
+  // Clear the container first
   itemsContainer.innerHTML = '';
+  
+  if (!items || items.length === 0) {
+    itemsContainer.innerHTML = '<p>Nenhum item disponível. Gere itens primeiro.</p>';
+    return;
+  }
+  
+  console.log(`Rendering ${items.length} items:`, items);
+  
+  // Create a div for each item
   items.forEach(item => {
     const itemElement = document.createElement('div');
     itemElement.classList.add('item');
     itemElement.dataset.id = item.id;
+    
+    // Set the content of the div
     itemElement.innerHTML = `
       <div class="item-value">$${item.value}</div>
       <div class="item-weight">${item.weight} kg</div>
     `;
-    itemElement.addEventListener('click', () => toggleItemSelection(item));
+    
+    // Add event listener for item selection
+    itemElement.addEventListener('click', () => {
+      toggleItemSelection(item);
+    });
+    
+    // Append the element to the container
     itemsContainer.appendChild(itemElement);
   });
 }
@@ -216,19 +276,41 @@ function toggleItemSelection(item) {
 }
 
 function highlightSelectedItems() {
+  console.log("Highlighting selected items. Selected:", selectedItems, "Optimal:", optimalSolution);
+  
   // Clear previous selections
-  document.querySelectorAll('.item').forEach(el => el.classList.remove('selected'));
-  selectedItems.forEach(item => {
-    const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
-    if (itemElement) itemElement.classList.add('selected');
+  document.querySelectorAll('.item').forEach(el => {
+    el.classList.remove('selected');
+    el.classList.remove('in-optimal');
   });
+  
+  // Highlight currently selected items
+  if (selectedItems && selectedItems.length > 0) {
+    selectedItems.forEach(item => {
+      const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
+      if (itemElement) {
+        itemElement.classList.add('selected');
+        console.log(`Highlighted selected item ${item.id}`);
+      } else {
+        console.warn(`Could not find element for selected item ${item.id}`);
+      }
+    });
+  }
 
   // Highlight items that belong to the optimal solution (if available)
-  if (optimalSolution && Array.isArray(optimalSolution)) {
-    document.querySelectorAll('.item').forEach(el => el.classList.remove('in-optimal'));
+  if (optimalSolution && Array.isArray(optimalSolution) && optimalSolution.length > 0) {
     optimalSolution.forEach(item => {
+      if (!item || !item.id) {
+        console.warn("Invalid item in optimal solution:", item);
+        return;
+      }
       const itemElement = document.querySelector(`.item[data-id="${item.id}"]`);
-      if (itemElement) itemElement.classList.add('in-optimal');
+      if (itemElement) {
+        itemElement.classList.add('in-optimal');
+        console.log(`Highlighted optimal item ${item.id}`);
+      } else {
+        console.warn(`Could not find element for optimal item ${item.id}`);
+      }
     });
   }
 }
@@ -285,6 +367,8 @@ function resetSelection() {
 
 // ----- Provided Brute Force Method -----
 function bruteForceKnapsack(items, capacity) {
+  console.log("Running bruteForceKnapsack with items:", items);
+  
   let bestValue = 0;
   let bestCombination = [];
   const n = items.length;
@@ -297,25 +381,32 @@ function bruteForceKnapsack(items, capacity) {
     let currentValue = 0;
     let currentWeight = 0;
     let combination = [];
+    
     for (let j = 0; j < n; j++) {
       steps++;
       if (i & (1 << j)) {
-        currentValue += items[j].value;
-        currentWeight += items[j].weight;
-        combination.push(items[j]);
+        // Make sure we include the full item object
+        const item = items[j];
+        currentValue += item.value;
+        currentWeight += item.weight;
+        combination.push(item);
       }
     }
+    
     allCombinations.push({
       combination,
       value: currentValue,
       weight: currentWeight,
       valid: currentWeight <= capacity
     });
+    
     if (currentWeight <= capacity && currentValue > bestValue) {
       bestValue = currentValue;
-      bestCombination = combination;
+      bestCombination = [...combination]; // Create a copy to avoid reference issues
     }
   }
+  
+  console.log("Brute force complete. Best combination:", bestCombination);
   return { bestValue, bestCombination, steps, allCombinations };
 }
 
@@ -334,93 +425,104 @@ function solveKnapsack() {
     return;
   }
   
+  // Check if items exist
+  if (!items || items.length === 0) {
+    alert('Não há itens para resolver. Por favor, gere itens primeiro.');
+    return;
+  }
+  
   // Update capacity from input (in case it was changed)
   capacity = parseInt(capacityInput.value);
+  console.log(`Solving with algorithm: ${algorithm}, capacity: ${capacity}, items:`, items);
   
-  // Different algorithms based on selection
-  let result;
-  switch(algorithm) {
-    case 'bruteforce':
-      result = bruteForceKnapsack(items, capacity);
-      optimalSolution = result.bestCombination;
-      stepsCounter = result.steps;
-      break;
-    case 'dp':
-      optimalSolution = solveKnapsackDP();
-      break;
-    case 'dp_recursive':
-      optimalSolution = solveKnapsackDPRecursive();
-      break;
-    case 'greedy':
-      optimalSolution = solveKnapsackGreedy();
-      break;
-    case 'bnb':
-      optimalSolution = solveKnapsackBnB();
-      break;
-    case 'ga':
-      optimalSolution = solveKnapsackGA();
-      break;
-    case 'sa':
-      optimalSolution = solveKnapsackSA();
-      break;
-    case 'aco':
-      optimalSolution = solveKnapsackACO();
-      break;
-    case 'pso':
-      optimalSolution = solveKnapsackPSO();
-      break;
-    case 'cuckoo':
-      optimalSolution = solveKnapsackCuckoo();
-      break;
-    case 'approx':
-      optimalSolution = solveKnapsackApprox();
-      break;
-    case 'fptas':
-      optimalSolution = solveKnapsackFPTAS();
-      break;
-    default:
-      alert('Algoritmo não encontrado!');
-      return;
-  }
-  
-  const endTime = performance.now();
-  const executionTime = endTime - startTime;
-  
-  // Display results
-  document.getElementById('execution-time').textContent = `${executionTime.toFixed(2)} ms`;
-  bestValueSpan.textContent = calculateTotalValue(optimalSolution);
-  totalWeightSpan.textContent = calculateTotalWeight(optimalSolution);
-  stepsTakenSpan.textContent = stepsCounter;
-  
-  optimalSolutionDiv.innerHTML = '';
-  if (optimalSolution.length === 0) {
-    optimalSolutionDiv.innerHTML = '<p>Nenhum item pode ser adicionado dentro da capacidade.</p>';
-  } else {
-    optimalSolution.forEach(item => {
-      const itemElement = document.createElement('div');
-      itemElement.classList.add('item');
-      itemElement.classList.add('in-optimal');
-      itemElement.innerHTML = `
-        <div class="item-value">$${item.value}</div>
-        <div class="item-weight">${item.weight}kg</div>
-      `;
-      optimalSolutionDiv.appendChild(itemElement);
-    });
-  }
-  
-  // Show result panel
-  resultPanel.style.display = 'block';
-  
-  // Update items visualization to highlight optimal items
-  const allItemElements = itemsContainer.querySelectorAll('.item');
-  allItemElements.forEach(el => el.classList.remove('in-optimal'));
-  
-  optimalSolution.forEach(item => {
-    const optimalElement = itemsContainer.querySelector(`.item[data-id="${item.id}"]`);
-    if (optimalElement) {
-      optimalElement.classList.add('in-optimal');
+  try {
+    switch(algorithm) {
+      case 'bruteforce':
+        const result = bruteForceKnapsack(items, capacity);
+        optimalSolution = result.bestCombination;
+        stepsCounter = result.steps;
+        break;
+      case 'dp':
+        optimalSolution = solveKnapsackDP();
+        break;
+      case 'dp_recursive':
+        optimalSolution = solveKnapsackDPRecursive();
+        break;
+      case 'greedy':
+        optimalSolution = solveKnapsackGreedy();
+        break;
+      case 'bnb':
+        optimalSolution = solveKnapsackBnB();
+        break;
+      case 'ga':
+        optimalSolution = solveKnapsackGA();
+        break;
+      case 'sa':
+        optimalSolution = solveKnapsackSA();
+        break;
+      case 'aco':
+        optimalSolution = solveKnapsackACO();
+        break;
+      case 'pso':
+        optimalSolution = solveKnapsackPSO();
+        break;
+      case 'cuckoo':
+        optimalSolution = solveKnapsackCuckoo();
+        break;
+      case 'approx':
+        optimalSolution = solveKnapsackApprox();
+        break;
+      case 'fptas':
+        optimalSolution = solveKnapsackFPTAS();
+        break;
+      default:
+        alert('Algoritmo não encontrado!');
+        return;
     }
-  });
+    
+    console.log("Optimal solution:", optimalSolution);
+    
+    // Handle case if optimalSolution is invalid
+    if (!optimalSolution) {
+      alert('Erro ao calcular a solução. Verifique o console para mais informações.');
+      return;
+    }
+    
+    const endTime = performance.now();
+    const executionTime = endTime - startTime;
+    
+    // Display results
+    document.getElementById('execution-time').textContent = `${executionTime.toFixed(2)} ms`;
+    bestValueSpan.textContent = calculateTotalValue(optimalSolution);
+    totalWeightSpan.textContent = calculateTotalWeight(optimalSolution);
+    stepsTakenSpan.textContent = stepsCounter;
+    
+    // Show optimal solution items
+    optimalSolutionDiv.innerHTML = '';
+    if (optimalSolution.length === 0) {
+      optimalSolutionDiv.innerHTML = '<p>Nenhum item pode ser adicionado dentro da capacidade.</p>';
+    } else {
+      optimalSolution.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.classList.add('item');
+        itemElement.classList.add('in-optimal');
+        itemElement.innerHTML = `
+          <div class="item-value">$${item.value}</div>
+          <div class="item-weight">${item.weight}kg</div>
+        `;
+        optimalSolutionDiv.appendChild(itemElement);
+      });
+    }
+    
+    // Show result panel
+    resultPanel.style.display = 'block';
+    
+    // Update items visualization to highlight optimal items
+    highlightSelectedItems();
+  } catch (error) {
+    console.error("Error solving knapsack:", error);
+    alert(`Erro ao calcular a solução: ${error.message}\n\nVerifique o console para mais detalhes.`);
+  }
 }
 
 // ----- 1. Dynamic Programming -----
