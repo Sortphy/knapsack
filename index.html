@@ -7,7 +7,7 @@
   <link rel="icon" href="./images/sortphy.png">
   <link rel="stylesheet" href="styles.css">
 
-  <script defer src="script.js"></script>
+  <script defer src="script.js" type="module"></script>
 
 </head>
 <body>
@@ -101,6 +101,9 @@
             <option value="bnb" title="Mais eficiente que força bruta, usa poda de ramos">Branch and Bound</option>
             <option value="ga" title="Bom para problemas grandes, usa evolução de população">Algoritmo Genético</option>
             <option value="sa" title="Bom para problemas grandes, pode escapar de ótimos locais">Simulated Annealing</option>
+            <option value="aco" title="Inspirado no comportamento de formigas, bom para problemas de otimização combinatória">Ant Colony Optimization</option>
+            <option value="pso" title="Baseado no comportamento de enxames, eficiente para otimização multimodal">Particle Swarm Optimization</option>
+            <option value="cuckoo" title="Inspirado no comportamento do cuco, bom para exploração global">Cuckoo Search</option>
             <option value="approx" title="Rápido, garante pelo menos 50% do valor ótimo">Aproximação</option>
             <option value="fptas" title="Pode chegar arbitrariamente perto da solução ótima">FPTAS</option>
           </select>
@@ -181,6 +184,9 @@
         <li><strong>Branch and Bound:</strong> Mais eficiente que força bruta, usa poda de ramos.</li>
         <li><strong>Algoritmo Genético:</strong> Boa para problemas grandes, usa evolução de população.</li>
         <li><strong>Simulated Annealing:</strong> Boa para problemas grandes, pode escapar de ótimos locais.</li>
+        <li><strong>Ant Colony Optimization:</strong> Inspirado no comportamento de formigas, usa feromônios e heurísticas para explorar soluções promissoras.</li>
+        <li><strong>Particle Swarm Optimization:</strong> Baseado no comportamento de pássaros e peixes em grupos, cada partícula se move no espaço de busca influenciada por soluções pessoais e globais.</li>
+        <li><strong>Cuckoo Search:</strong> Inspirado no comportamento parasita do cuco, combina voos de Lévy para busca global e abandono de ninhos para diversificação.</li>
         <li><strong>Aproximação:</strong> Rápido, garante pelo menos 50% do valor ótimo.</li>
         <li><strong>FPTAS:</strong> Pode chegar arbitrariamente perto da solução ótima.</li>
       </ul>
